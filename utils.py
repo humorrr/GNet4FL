@@ -13,14 +13,13 @@ from sklearn.metrics import roc_auc_score, f1_score
 from copy import deepcopy
 from scipy.spatial.distance import pdist, squareform
 
-
 def get_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--no-cuda', action = 'store_true', default = False,
                         help = 'Disables CUDA training.')
     parser.add_argument('--seed', type = int, default = 42)
     parser.add_argument('--nhid', type = int, default = 100)
-    parser.add_argument('--epochs', type = int, default = 1,
+    parser.add_argument('--epochs', type = int, default = 100,
                         help = 'Number of epochs to train.')
     parser.add_argument('--lr', type = float, default = 0.04)
     parser.add_argument('--weight_decay', type = float, default = 5e-5)
@@ -35,8 +34,8 @@ def split_genuine(labels):
     c_idxs = []  # class-wise index
     train_idx = []
     val_idx = []
-    test_idx = []
-    c_num_mat = np.zeros((num_classes, 3)).astype(int)
+    # test_idx = []
+    c_num_mat = np.zeros((num_classes, 2)).astype(int)
 
     for i in range(num_classes):
         c_idx = (labels == i).nonzero()[:, -1].tolist()
@@ -52,18 +51,14 @@ def split_genuine(labels):
                 ipdb.set_trace()
             c_num_mat[i, 0] = 1
             c_num_mat[i, 1] = 1
-            c_num_mat[i, 2] = 1
         else:
             print("elsec_num")
             c_num_mat[i, 0] = int(c_num / 4)
             c_num_mat[i, 1] = int(c_num / 3)
-            c_num_mat[i, 2] = int(c_num / 2)
         print("c_num_mat:",c_num_mat)
         train_idx = train_idx + c_idx[:c_num_mat[i, 0]]
 
         val_idx = val_idx + c_idx[c_num_mat[i, 0]:c_num_mat[i, 0] + c_num_mat[i, 1]]
-        test_idx = test_idx + c_idx[
-                              c_num_mat[i, 0] + c_num_mat[i, 1]:c_num_mat[i, 0] + c_num_mat[i, 1] + c_num_mat[i, 2]]
     # print("train_idx:", train_idx, val_idx, test_idx)
     # print("train_idx:", len(train_idx), len(val_idx), len(test_idx))
     random.shuffle(train_idx)
@@ -72,10 +67,9 @@ def split_genuine(labels):
 
     train_idx = torch.LongTensor(train_idx)
     val_idx = torch.LongTensor(val_idx)
-    test_idx = torch.LongTensor(test_idx)
     # c_num_mat = torch.LongTensor(c_num_mat)
     # print(c_num_mat)
-    return train_idx, val_idx, test_idx, c_num_mat
+    return train_idx, val_idx, c_num_mat
 
 
 def print_edges_num(dense_adj, labels):
@@ -92,4 +86,19 @@ def print_edges_num(dense_adj, labels):
             edge_num = dense_adj[row_ind].transpose()[col_ind].sum()
             print("edges between class {:d} and class {:d}: {:f}".format(i, j, edge_num))
 
+def print_class_acc(output, labels, pre = 'valid'):
+    pre_num = 0
+    # print class-wise performance
+    # ipdb.set_trace()
+    if labels.max() > 1:
+        auc_score = roc_auc_score(labels.detach().cpu().numpy(), F.softmax(output, dim = -1).detach().cpu().numpy(),
+                                  average = 'macro', multi_class = 'ovr')
+    else:
+        auc_score = roc_auc_score(labels.detach().cpu().numpy(),
+                                  F.softmax(output, dim = -1)[:, 1].detach().cpu().numpy(), average = 'macro')
 
+    macro_F = f1_score(labels.detach().cpu().numpy(), torch.argmax(output, dim = -1).detach().cpu().numpy(),
+                       average = 'macro')
+    print(str(pre) + ' current auc-roc score: {:f}, current macro_F score: {:f}'.format(auc_score, macro_F))
+
+    return

@@ -3,14 +3,14 @@ import scipy.sparse as sp
 import numpy as np
 import torch
 
-def load_data(project, dataset="cora"):#modified from code: pygcn
+def load_data(project, version,att):#modified from code: pygcn
     print('Loading {} dataset...'.format(project))
 
-    idx_features_labels1 = np.genfromtxt("data/csv/y_{}.csv".format(project),delimiter = ',',
+    idx_features_labels1 = np.genfromtxt("data/csv/y_{}_{}_{}.csv".format(project,version,att),delimiter = ',',
                                         dtype=np.dtype(str))
-    idx_features_labels = np.genfromtxt("data/csv/feature_{}.csv".format(project),delimiter = ',',
+    idx_features_labels = np.genfromtxt("data/csv/feature_{}_{}_{}.csv".format(project,version,att),delimiter = ',',
                                         dtype = np.dtype(str))
-    idx_features_labels2 = np.genfromtxt("data/csv/feature_{}.csv".format(project), delimiter = ',',
+    idx_features_labels2 = np.genfromtxt("data/csv/feature_{}_{}_{}.csv".format(project,version,att), delimiter = ',',
                                         dtype = np.int32)
     features = sp.csr_matrix(idx_features_labels[:, 1:], dtype=np.float64)
     # print(features)
@@ -24,7 +24,7 @@ def load_data(project, dataset="cora"):#modified from code: pygcn
 
     idx = np.array(idx_features_labels2[:,0], dtype=np.int32)
     idx_map = {j: i for i, j in enumerate(idx)}
-    edges_unordered = np.genfromtxt("data/csv/edgecites_{}.csv".format(project),delimiter = ',',
+    edges_unordered = np.genfromtxt("data/csv/edgecites_{}_{}_{}.csv".format(project,version,att),delimiter = ',',
                                     dtype=np.int32)
     edges_unordered = edges_unordered[:]
 
@@ -40,7 +40,6 @@ def load_data(project, dataset="cora"):#modified from code: pygcn
     adj = sparse_mx_to_torch_sparse_tensor(adj)
     edges = torch.tensor(edges, dtype = torch.int64).T
     return adj, features, labels,edges
-
 
 
 def sparse_mx_to_torch_sparse_tensor(sparse_mx):
