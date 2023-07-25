@@ -36,7 +36,8 @@ The following is the organization of the repository.
 
 ## Run
 
- 1. Data processing
+ 1. Data processing, i.e. run ast_statement.py. Due to data being overwritten, we are unable to provide the dataset. 
+ Please collect the defects4j related information to construct the data.
  2. Set the project and version name, e.g.,project='Chart',version=1
  3. run main.py
  
